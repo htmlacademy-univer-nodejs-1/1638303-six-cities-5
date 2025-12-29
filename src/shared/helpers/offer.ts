@@ -10,7 +10,7 @@ import {
   CityName,
   Amenity,
   Location,
-} from "../types/index.js";
+} from '../types/index.js';
 
 const CITY_LOCATIONS: Record<CityName, Location> = {
   [CityName.PARIS]: {
@@ -63,7 +63,7 @@ export function createOffer(offerData: string): Offer {
     commentsCount,
     latitude,
     longitude,
-  ] = offerData.replace("\n", "").split("\t");
+  ] = offerData.replace('\n', '').split('\t');
   const user: User = {
     name,
     email,
@@ -81,7 +81,7 @@ export function createOffer(offerData: string): Offer {
     publishDate: new Date(publishDate),
     city: isCityName(city) ?? CityName.AMSTERDAM,
     previewImage: previewImage,
-    images: images.split(",").map((img) => img.trim()) as [
+    images: images.split(',').map((img) => img.trim()) as [
       string,
       string,
       string,
@@ -89,15 +89,15 @@ export function createOffer(offerData: string): Offer {
       string,
       string,
     ],
-    isPremium: isPremium.toLowerCase() === "true",
-    isFavorite: isFavorite.toLowerCase() === "true",
+    isPremium: isPremium.toLowerCase() === 'true',
+    isFavorite: isFavorite.toLowerCase() === 'true',
     rating: Math.max(1, Math.min(5, parsedRating)),
     type: isPropertyType(housingType) ?? PropertyType.APARTMENT,
     rooms: parseInt(rooms, 10),
     guests: parseInt(guests, 10),
     price: parseInt(price, 10),
     amenities: amenities
-      .split(";")
+      .split(';')
       .map((c) => isAmenity(c.trim()) ?? Amenity.FRIDGE),
     user,
     commentsCount: isNaN(parsedCommentsCount) ? 0 : parsedCommentsCount,
@@ -109,7 +109,7 @@ export function createOffer(offerData: string): Offer {
 }
 
 export function serializeOfferForFrontend(offer: any): any {
-  const userObject = typeof offer.user === "object" ? offer.user : null;
+  const userObject = typeof offer.user === 'object' ? offer.user : null;
   const cityName = offer.city as CityName;
   const cityLocation =
     CITY_LOCATIONS[cityName] || CITY_LOCATIONS[CityName.PARIS];
@@ -135,13 +135,13 @@ export function serializeOfferForFrontend(offer: any): any {
     goods: offer.amenities,
     host: userObject
       ? {
-          name: userObject.name,
-          email: userObject.email,
-          avatarUrl: userObject.avatarUrl
-            ? `img/${userObject.avatarUrl}`
-            : userObject.avatarUrl,
-          isPro: userObject.type === "pro",
-        }
+        name: userObject.name,
+        email: userObject.email,
+        avatarUrl: userObject.avatarUrl
+          ? `img/${userObject.avatarUrl}`
+          : userObject.avatarUrl,
+        isPro: userObject.type === 'pro',
+      }
       : undefined,
     commentsCount: offer.commentsCount,
     location: offer.location,
@@ -150,7 +150,7 @@ export function serializeOfferForFrontend(offer: any): any {
 
 export function serializeCommentForFrontend(comment: any): any {
   const authorObject =
-    typeof comment.author === "object" ? comment.author : null;
+    typeof comment.author === 'object' ? comment.author : null;
 
   return {
     id: comment._id?.toString() || comment.id?.toString(),
@@ -159,13 +159,13 @@ export function serializeCommentForFrontend(comment: any): any {
     rating: comment.rating,
     user: authorObject
       ? {
-          name: authorObject.name,
-          email: authorObject.email,
-          avatarUrl: authorObject.avatarUrl
-            ? `img/${authorObject.avatarUrl}`
-            : authorObject.avatarUrl,
-          isPro: authorObject.type === "pro",
-        }
+        name: authorObject.name,
+        email: authorObject.email,
+        avatarUrl: authorObject.avatarUrl
+          ? `img/${authorObject.avatarUrl}`
+          : authorObject.avatarUrl,
+        isPro: authorObject.type === 'pro',
+      }
       : undefined,
   };
 }

@@ -1,6 +1,6 @@
-import { inject, injectable } from "inversify";
-import { Request, Response } from "express";
-import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from 'inversify';
+import { Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
 import {
   BaseController,
   HttpError,
@@ -8,16 +8,16 @@ import {
   ValidateDtoMiddleware,
   UploadFileMiddleware,
   AuthenticateMiddleware,
-} from "../../libs/rest/index.js";
-import { Logger } from "../../libs/logger/index.js";
-import { Component } from "../../types/index.js";
-import { UserService } from "./user-service.interface.js";
-import { Config } from "../../libs/config/index.js";
-import { RestSchema } from "../../libs/config/rest.schema.js";
-import { CreateUserDto } from "./dto/create-user.dto.js";
-import { LoginUserDto } from "./dto/login-user.dto.js";
-import { JwtService } from "../../libs/jwt/index.js";
-import { serializeOfferForFrontend } from "../../helpers/offer.js";
+} from '../../libs/rest/index.js';
+import { Logger } from '../../libs/logger/index.js';
+import { Component } from '../../types/index.js';
+import { UserService } from './user-service.interface.js';
+import { Config } from '../../libs/config/index.js';
+import { RestSchema } from '../../libs/config/rest.schema.js';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { LoginUserDto } from './dto/login-user.dto.js';
+import { JwtService } from '../../libs/jwt/index.js';
+import { serializeOfferForFrontend } from '../../helpers/offer.js';
 
 @injectable()
 export class UserController extends BaseController {
@@ -31,7 +31,7 @@ export class UserController extends BaseController {
     @inject(Component.JwtService) private readonly jwtService: JwtService,
   ) {
     super(logger);
-    this.logger.info("Register routes for UserController…");
+    this.logger.info('Register routes for UserController…');
 
     this.authenticateMiddleware = new AuthenticateMiddleware(this.jwtService);
 
@@ -42,54 +42,54 @@ export class UserController extends BaseController {
       LoginUserDto,
     );
     const uploadAvatarMiddleware = new UploadFileMiddleware(
-      this.configService.get("UPLOAD_DIRECTORY"),
-      "avatar",
+      this.configService.get('UPLOAD_DIRECTORY'),
+      'avatar',
     );
 
     this.addRoute({
-      path: "/register",
+      path: '/register',
       method: HttpMethod.Post,
       handler: this.create as any,
       middlewares: [validateCreateUserDtoMiddleware],
     });
     this.addRoute({
-      path: "/login",
+      path: '/login',
       method: HttpMethod.Post,
       handler: this.login as any,
       middlewares: [validateLoginUserDtoMiddleware],
     });
     this.addRoute({
-      path: "/avatar",
+      path: '/avatar',
       method: HttpMethod.Post,
       handler: this.uploadAvatar as any,
       middlewares: [this.authenticateMiddleware, uploadAvatarMiddleware],
     });
     this.addRoute({
-      path: "/login",
+      path: '/login',
       method: HttpMethod.Get,
       handler: this.checkToken as any,
       middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: "/favorites/:offerId",
+      path: '/favorites/:offerId',
       method: HttpMethod.Post,
       handler: this.addToFavorites as any,
       middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: "/favorites/:offerId",
+      path: '/favorites/:offerId',
       method: HttpMethod.Delete,
       handler: this.removeFromFavorites as any,
       middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: "/favorites",
+      path: '/favorites',
       method: HttpMethod.Get,
       handler: this.getFavorites as any,
       middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: "/logout",
+      path: '/logout',
       method: HttpMethod.Delete,
       handler: this.logout as any,
       middlewares: [this.authenticateMiddleware],
@@ -108,13 +108,13 @@ export class UserController extends BaseController {
       throw new HttpError(
         StatusCodes.CONFLICT,
         `User with email «${body.email}» exists.`,
-        "UserController",
+        'UserController',
       );
     }
 
     const result = await this.userService.create(
       body,
-      this.configService.get("SALT"),
+      this.configService.get('SALT'),
     );
 
     const token = await this.jwtService.sign({
@@ -141,15 +141,15 @@ export class UserController extends BaseController {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         `User with email ${body.email} not found.`,
-        "UserController",
+        'UserController',
       );
     }
 
-    if (!user.verifyPassword(body.password, this.configService.get("SALT"))) {
+    if (!user.verifyPassword(body.password, this.configService.get('SALT'))) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         `Incorrect password for user ${body.email}.`,
-        "UserController",
+        'UserController',
       );
     }
 
@@ -172,16 +172,16 @@ export class UserController extends BaseController {
     if (!file) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
-        "Avatar file is required",
-        "UserController",
+        'Avatar file is required',
+        'UserController',
       );
     }
 
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "User not authenticated",
-        "UserController",
+        'User not authenticated',
+        'UserController',
       );
     }
 
@@ -202,8 +202,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "User not authenticated",
-        "UserController",
+        'User not authenticated',
+        'UserController',
       );
     }
 
@@ -212,8 +212,8 @@ export class UserController extends BaseController {
     if (!foundUser) {
       throw new HttpError(
         StatusCodes.NOT_FOUND,
-        "User not found",
-        "UserController",
+        'User not found',
+        'UserController',
       );
     }
 
@@ -221,7 +221,7 @@ export class UserController extends BaseController {
       email: foundUser.email,
       name: foundUser.name,
       avatarUrl: foundUser.avatarUrl,
-      isPro: foundUser.type === "pro",
+      isPro: foundUser.type === 'pro',
     });
   }
 
@@ -232,8 +232,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "User not authenticated",
-        "UserController",
+        'User not authenticated',
+        'UserController',
       );
     }
 
@@ -249,8 +249,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "User not authenticated",
-        "UserController",
+        'User not authenticated',
+        'UserController',
       );
     }
 
@@ -266,8 +266,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "User not authenticated",
-        "UserController",
+        'User not authenticated',
+        'UserController',
       );
     }
 

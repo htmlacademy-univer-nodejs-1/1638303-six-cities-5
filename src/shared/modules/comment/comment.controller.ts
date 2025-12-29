@@ -1,6 +1,6 @@
-import { inject, injectable } from "inversify";
-import { Request, Response } from "express";
-import { StatusCodes } from "http-status-codes";
+import { inject, injectable } from 'inversify';
+import { Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
 import {
   BaseController,
   HttpMethod,
@@ -9,14 +9,14 @@ import {
   DocumentExistsMiddleware,
   AuthenticateMiddleware,
   HttpError,
-} from "../../libs/rest/index.js";
-import { Logger } from "../../libs/logger/index.js";
-import { Component } from "../../types/index.js";
-import { CommentService } from "./comment-service.interface.js";
-import { CreateCommentDto } from "./dto/create-comment.dto.js";
-import { OfferService } from "../offer/offer-service.interface.js";
-import { JwtService } from "../../libs/jwt/index.js";
-import { serializeCommentForFrontend } from "../../helpers/offer.js";
+} from '../../libs/rest/index.js';
+import { Logger } from '../../libs/logger/index.js';
+import { Component } from '../../types/index.js';
+import { CommentService } from './comment-service.interface.js';
+import { CreateCommentDto } from './dto/create-comment.dto.js';
+import { OfferService } from '../offer/offer-service.interface.js';
+import { JwtService } from '../../libs/jwt/index.js';
+import { serializeCommentForFrontend } from '../../helpers/offer.js';
 
 @injectable()
 export class CommentController extends BaseController {
@@ -30,28 +30,28 @@ export class CommentController extends BaseController {
     @inject(Component.JwtService) private readonly jwtService: JwtService,
   ) {
     super(logger);
-    this.logger.info("Register routes for CommentController…");
+    this.logger.info('Register routes for CommentController…');
 
     this.authenticateMiddleware = new AuthenticateMiddleware(this.jwtService);
 
-    const validateOfferIdMiddleware = new ValidateObjectIdMiddleware("offerId");
+    const validateOfferIdMiddleware = new ValidateObjectIdMiddleware('offerId');
     const validateCreateCommentDtoMiddleware = new ValidateDtoMiddleware(
       CreateCommentDto,
     );
     const documentExistsMiddleware = new DocumentExistsMiddleware(
       this.offerService,
-      "offerId",
-      "Offer",
+      'offerId',
+      'Offer',
     );
 
     this.addRoute({
-      path: "/:offerId",
+      path: '/:offerId',
       method: HttpMethod.Get,
       handler: this.index as any,
       middlewares: [validateOfferIdMiddleware],
     });
     this.addRoute({
-      path: "/:offerId",
+      path: '/:offerId',
       method: HttpMethod.Post,
       handler: this.create as any,
       middlewares: [
@@ -88,14 +88,14 @@ export class CommentController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "User not authenticated",
-        "CommentController",
+        'User not authenticated',
+        'CommentController',
       );
     }
 
     const { offerId } = params;
 
-    const text = body.comment || body.text || "";
+    const text = body.comment || body.text || '';
 
     const result = await this.commentService.create({
       text,

@@ -1,10 +1,10 @@
-import { NextFunction, Request, Response } from "express";
-import { StatusCodes } from "http-status-codes";
-import { Middleware } from "./middleware.interface.js";
-import { HttpError } from "../errors/index.js";
-import { JwtService } from "../../jwt/index.js";
-import { Component } from "../../../types/index.js";
-import { inject, injectable } from "inversify";
+import { NextFunction, Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
+import { Middleware } from './middleware.interface.js';
+import { HttpError } from '../errors/index.js';
+import { JwtService } from '../../jwt/index.js';
+import { Component } from '../../../types/index.js';
+import { inject, injectable } from 'inversify';
 
 @injectable()
 export class AuthenticateMiddleware implements Middleware {
@@ -18,13 +18,13 @@ export class AuthenticateMiddleware implements Middleware {
     next: NextFunction,
   ): Promise<void> {
     const authorizationHeader = req.headers.authorization;
-    const xTokenHeader = req.headers["x-token"] as string | undefined;
+    const xTokenHeader = req.headers['x-token'] as string | undefined;
 
     let token: string | undefined;
 
     if (authorizationHeader) {
-      const [bearer, bearerToken] = authorizationHeader.split(" ");
-      if (bearer === "Bearer" && bearerToken) {
+      const [bearer, bearerToken] = authorizationHeader.split(' ');
+      if (bearer === 'Bearer' && bearerToken) {
         token = bearerToken;
       }
     } else if (xTokenHeader) {
@@ -34,8 +34,8 @@ export class AuthenticateMiddleware implements Middleware {
     if (!token) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "Authorization header is required",
-        "AuthenticateMiddleware",
+        'Authorization header is required',
+        'AuthenticateMiddleware',
       );
     }
 
@@ -49,9 +49,10 @@ export class AuthenticateMiddleware implements Middleware {
     } catch (error) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        "Invalid token",
-        "AuthenticateMiddleware",
+        'Invalid token',
+        'AuthenticateMiddleware',
       );
     }
   }
 }
+
