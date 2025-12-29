@@ -28,5 +28,4 @@ export const LONGITUDE_MIN = -180;
 export const LONGITUDE_MAX = 180;
 export const DECIMALS_COORD = 6;
 
-
 export const CHUNK_SIZE = 16384;

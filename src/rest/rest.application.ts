@@ -61,6 +61,18 @@ export class RestApplication {
   }
 
   private async _initControllers() {
+    this.server.get('/', (_req, res) => {
+      res.json({
+        message: 'Six Cities API',
+        status: 'running',
+        endpoints: {
+          users: '/users',
+          offers: '/offers',
+          comments: '/comments',
+        },
+      });
+    });
+
     this.server.use('/users', this.userController.router);
     this.server.use('/offers', this.offerController.router);
     this.server.use('/comments', this.commentController.router);

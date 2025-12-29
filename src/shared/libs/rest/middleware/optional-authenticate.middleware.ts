@@ -7,25 +7,34 @@ import { inject, injectable } from 'inversify';
 @injectable()
 export class OptionalAuthenticateMiddleware implements Middleware {
   constructor(
-    @inject(Component.JwtService) private readonly jwtService: JwtService
+    @inject(Component.JwtService) private readonly jwtService: JwtService,
   ) {}
 
-  public async execute(req: Request & { user?: { id: string; email: string } }, _res: Response, next: NextFunction): Promise<void> {
+  public async execute(
+    req: Request & { user?: { id: string; email: string } },
+    _res: Response,
+    next: NextFunction,
+  ): Promise<void> {
     const authorizationHeader = req.headers.authorization;
-    console.log(`OptionalAuthenticateMiddleware: authorizationHeader=${authorizationHeader}`);
-    if (!authorizationHeader) {
-      return next();
+    const xTokenHeader = req.headers['x-token'] as string | undefined;
+
+    let token: string | undefined;
+
+    if (authorizationHeader) {
+      const [bearer, bearerToken] = authorizationHeader.split(' ');
+      if (bearer === 'Bearer' && bearerToken) {
+        token = bearerToken;
+      }
+    } else if (xTokenHeader) {
+      token = xTokenHeader;
     }
 
-    const [bearer, token] = authorizationHeader.split(' ');
-
-    if (bearer !== 'Bearer' || !token) {
+    if (!token) {
       return next();
     }
 
     try {
       const payload = await this.jwtService.verify(token);
-      console.log(`OptionalAuthenticateMiddleware: token valid, payload=${JSON.stringify(payload)}`);
       req.user = {
         id: payload.id,
         email: payload.email,

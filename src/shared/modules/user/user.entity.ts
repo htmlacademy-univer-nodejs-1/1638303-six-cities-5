@@ -2,7 +2,6 @@ import { prop, modelOptions, getModelForClass, defaultClasses } from '@typegoose
 import { UserType } from '../../types/index.js';
 import { createSHA256 } from '../../helpers/index.js';
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
 export interface UserEntity extends defaultClasses.Base {}
 
 @modelOptions({
@@ -11,7 +10,7 @@ export interface UserEntity extends defaultClasses.Base {}
     timestamps: true
   }
 })
-// eslint-disable-next-line @typescript-eslint/no-unsafe-declaration-merging
+
 export class UserEntity extends defaultClasses.TimeStamps {
   @prop({ required: true })
   public name!: string;

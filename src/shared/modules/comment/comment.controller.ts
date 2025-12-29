@@ -16,6 +16,7 @@ import { CommentService } from './comment-service.interface.js';
 import { CreateCommentDto } from './dto/create-comment.dto.js';
 import { OfferService } from '../offer/offer-service.interface.js';
 import { JwtService } from '../../libs/jwt/index.js';
+import { serializeCommentForFrontend } from '../../helpers/offer.js';
 
 @injectable()
 export class CommentController extends BaseController {
@@ -34,20 +35,31 @@ export class CommentController extends BaseController {
     this.authenticateMiddleware = new AuthenticateMiddleware(this.jwtService);
 
     const validateOfferIdMiddleware = new ValidateObjectIdMiddleware('offerId');
-    const validateCreateCommentDtoMiddleware = new ValidateDtoMiddleware(CreateCommentDto);
-    const documentExistsMiddleware = new DocumentExistsMiddleware(this.offerService, 'offerId', 'Offer');
+    const validateCreateCommentDtoMiddleware = new ValidateDtoMiddleware(
+      CreateCommentDto,
+    );
+    const documentExistsMiddleware = new DocumentExistsMiddleware(
+      this.offerService,
+      'offerId',
+      'Offer',
+    );
 
     this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Get,
       handler: this.index as any,
-      middlewares: [validateOfferIdMiddleware]
+      middlewares: [validateOfferIdMiddleware],
     });
     this.addRoute({
       path: '/:offerId',
       method: HttpMethod.Post,
       handler: this.create as any,
-      middlewares: [this.authenticateMiddleware, validateOfferIdMiddleware, validateCreateCommentDtoMiddleware, documentExistsMiddleware]
+      middlewares: [
+        this.authenticateMiddleware,
+        validateOfferIdMiddleware,
+        validateCreateCommentDtoMiddleware,
+        documentExistsMiddleware,
+      ],
     });
   }
 
@@ -57,7 +69,8 @@ export class CommentController extends BaseController {
   ): Promise<void> {
     const { offerId } = params;
     const comments = await this.commentService.findByOfferId(offerId);
-    this.ok(res, comments);
+    const serializedComments = comments.map(serializeCommentForFrontend);
+    this.ok(res, serializedComments);
   }
 
   public async create(
@@ -65,24 +78,32 @@ export class CommentController extends BaseController {
       body,
       params,
       user,
-    }: Request<{ offerId: string }, Record<string, unknown>, CreateCommentDto> & { user?: { id: string } },
+    }: Request<
+      { offerId: string },
+      Record<string, unknown>,
+      CreateCommentDto
+    > & { user?: { id: string } },
     res: Response,
   ): Promise<void> {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         'User not authenticated',
-        'CommentController'
+        'CommentController',
       );
     }
 
     const { offerId } = params;
 
+    const text = body.comment || body.text || '';
+
     const result = await this.commentService.create({
-      ...body,
+      text,
+      rating: body.rating,
       offerId,
       authorId: user.id,
     });
-    this.created(res, result);
+    const serializedResult = serializeCommentForFrontend(result);
+    this.created(res, serializedResult);
   }
 }

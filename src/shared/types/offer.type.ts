@@ -3,7 +3,6 @@ import { PropertyType } from './property.enum.js';
 import { CityName, Location } from './city.enum.js';
 import { Amenity } from './amenity.enum.js';
 
-
 export interface Offer {
   title: string;
   description: string;

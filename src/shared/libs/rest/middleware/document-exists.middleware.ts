@@ -36,4 +36,3 @@ export class DocumentExistsMiddleware implements Middleware {
   }
 }
 
-
