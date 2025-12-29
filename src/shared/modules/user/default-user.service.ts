@@ -7,12 +7,16 @@ import { UserService } from './user-service.interface.js';
 import { Component } from '../../types/index.js';
 import { Logger } from '../../libs/logger/index.js';
 import { createSHA256 } from '../../helpers/index.js';
+import { OfferEntity } from '../offer/offer.entity.js';
 
 @injectable()
 export class DefaultUserService implements UserService {
   constructor(
     @inject(Component.Logger) private readonly logger: Logger,
-    @inject(Component.UserModel) private readonly userModel: types.ModelType<UserEntity>
+    @inject(Component.UserModel)
+    private readonly userModel: types.ModelType<UserEntity>,
+    @inject(Component.OfferModel)
+    private readonly offerModel: types.ModelType<OfferEntity>,
   ) {}
 
   public async create(dto: CreateUserDto, salt: string): Promise<UserEntity> {
@@ -21,7 +25,7 @@ export class DefaultUserService implements UserService {
       email: dto.email,
       avatarUrl: dto.avatarUrl,
       password: createSHA256(dto.password, salt),
-      type: dto.type
+      type: dto.type,
     };
 
     const result = await this.userModel.create(user);
@@ -34,7 +38,10 @@ export class DefaultUserService implements UserService {
     return this.userModel.findOne({ email }).exec();
   }
 
-  public async findOrCreate(dto: CreateUserDto, salt: string): Promise<UserEntity> {
+  public async findOrCreate(
+    dto: CreateUserDto,
+    salt: string,
+  ): Promise<UserEntity> {
     const existedUser = await this.findByEmail(dto.email);
 
     if (existedUser) {
@@ -48,25 +55,57 @@ export class DefaultUserService implements UserService {
     return this.userModel.findById(userId).exec();
   }
 
-  public async updateById(userId: string, dto: UpdateUserDto): Promise<UserEntity | null> {
+  public async updateById(
+    userId: string,
+    dto: UpdateUserDto,
+  ): Promise<UserEntity | null> {
     return this.userModel.findByIdAndUpdate(userId, dto, { new: true }).exec();
   }
 
   public async addToFavorites(userId: string, offerId: string): Promise<void> {
-    await this.userModel.findByIdAndUpdate(userId, {
-      $addToSet: { favorites: offerId }
-    }).exec();
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $addToSet: { favorites: offerId },
+      })
+      .exec();
   }
 
-  public async removeFromFavorites(userId: string, offerId: string): Promise<void> {
-    await this.userModel.findByIdAndUpdate(userId, {
-      $pull: { favorites: offerId }
-    }).exec();
+  public async removeFromFavorites(
+    userId: string,
+    offerId: string,
+  ): Promise<void> {
+    await this.userModel
+      .findByIdAndUpdate(userId, {
+        $pull: { favorites: offerId },
+      })
+      .exec();
   }
 
-  public async findFavorites(userId: string): Promise<string[]> {
-    const user = await this.userModel.findById(userId).select('favorites').exec();
+  public async findFavoriteIds(userId: string): Promise<string[]> {
+    const user = await this.userModel
+      .findById(userId)
+      .select('favorites')
+      .exec();
     return (user?.favorites || []).map((id) => id.toString());
+  }
+
+  public async findFavorites(userId: string): Promise<OfferEntity[]> {
+    const user = await this.userModel
+      .findById(userId)
+      .select('favorites')
+      .exec();
+    const favoriteIds = user?.favorites || [];
+
+    if (favoriteIds.length === 0) {
+      return [];
+    }
+
+    const offers = await this.offerModel
+      .find({ _id: { $in: favoriteIds } })
+      .populate('user')
+      .exec();
+
+    return offers;
   }
 
   public async exists(documentId: string): Promise<boolean> {

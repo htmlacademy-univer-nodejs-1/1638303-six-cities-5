@@ -1,6 +1,10 @@
 import { createHmac } from 'node:crypto';
 
-export function generateRandomNumber(min: number, max: number, numAfterDigit = 0): number {
+export function generateRandomNumber(
+  min: number,
+  max: number,
+  numAfterDigit = 0,
+): number {
   const factor = Math.pow(10, numAfterDigit);
   return Math.floor(Math.random() * (max - min + 1) + min) / factor;
 }
@@ -31,9 +35,17 @@ export function getRandomBoolean(): boolean {
   return Math.random() < 0.5;
 }
 
-export function getRandomCoordinate(min: number, max: number, numAfterDigit: number): number {
+export function getRandomCoordinate(
+  min: number,
+  max: number,
+  numAfterDigit: number,
+): number {
   const factor = Math.pow(10, numAfterDigit);
-  return Math.floor(Math.random() * (max * factor - min * factor + 1) + min * factor) / factor;
+  return (
+    Math.floor(
+      Math.random() * (max * factor - min * factor + 1) + min * factor,
+    ) / factor
+  );
 }
 
 export function getRandomEnumValue(enumeration: any): any {

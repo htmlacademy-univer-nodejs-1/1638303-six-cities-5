@@ -1,15 +1,23 @@
-import { inject, injectable } from 'inversify';
-import { Request, Response } from 'express';
-import { StatusCodes } from 'http-status-codes';
-import { BaseController, HttpError, HttpMethod, ValidateDtoMiddleware, UploadFileMiddleware, AuthenticateMiddleware } from '../../libs/rest/index.js';
-import { Logger } from '../../libs/logger/index.js';
-import { Component } from '../../types/index.js';
-import { UserService } from './user-service.interface.js';
-import { Config } from '../../libs/config/index.js';
-import { RestSchema } from '../../libs/config/rest.schema.js';
-import { CreateUserDto } from './dto/create-user.dto.js';
-import { LoginUserDto } from './dto/login-user.dto.js';
-import { JwtService } from '../../libs/jwt/index.js';
+import { inject, injectable } from "inversify";
+import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
+import {
+  BaseController,
+  HttpError,
+  HttpMethod,
+  ValidateDtoMiddleware,
+  UploadFileMiddleware,
+  AuthenticateMiddleware,
+} from "../../libs/rest/index.js";
+import { Logger } from "../../libs/logger/index.js";
+import { Component } from "../../types/index.js";
+import { UserService } from "./user-service.interface.js";
+import { Config } from "../../libs/config/index.js";
+import { RestSchema } from "../../libs/config/rest.schema.js";
+import { CreateUserDto } from "./dto/create-user.dto.js";
+import { LoginUserDto } from "./dto/login-user.dto.js";
+import { JwtService } from "../../libs/jwt/index.js";
+import { serializeOfferForFrontend } from "../../helpers/offer.js";
 
 @injectable()
 export class UserController extends BaseController {
@@ -18,67 +26,80 @@ export class UserController extends BaseController {
   constructor(
     @inject(Component.Logger) protected readonly logger: Logger,
     @inject(Component.UserService) private readonly userService: UserService,
-    @inject(Component.Config) private readonly configService: Config<RestSchema>,
+    @inject(Component.Config)
+    private readonly configService: Config<RestSchema>,
     @inject(Component.JwtService) private readonly jwtService: JwtService,
   ) {
     super(logger);
-    this.logger.info('Register routes for UserController…');
+    this.logger.info("Register routes for UserController…");
 
     this.authenticateMiddleware = new AuthenticateMiddleware(this.jwtService);
 
-    const validateCreateUserDtoMiddleware = new ValidateDtoMiddleware(CreateUserDto);
-    const validateLoginUserDtoMiddleware = new ValidateDtoMiddleware(LoginUserDto);
+    const validateCreateUserDtoMiddleware = new ValidateDtoMiddleware(
+      CreateUserDto,
+    );
+    const validateLoginUserDtoMiddleware = new ValidateDtoMiddleware(
+      LoginUserDto,
+    );
     const uploadAvatarMiddleware = new UploadFileMiddleware(
-      this.configService.get('UPLOAD_DIRECTORY'),
-      'avatar'
+      this.configService.get("UPLOAD_DIRECTORY"),
+      "avatar",
     );
 
     this.addRoute({
-      path: '/register',
+      path: "/register",
       method: HttpMethod.Post,
       handler: this.create as any,
-      middlewares: [validateCreateUserDtoMiddleware]
+      middlewares: [validateCreateUserDtoMiddleware],
     });
     this.addRoute({
-      path: '/login',
+      path: "/login",
       method: HttpMethod.Post,
       handler: this.login as any,
-      middlewares: [validateLoginUserDtoMiddleware]
+      middlewares: [validateLoginUserDtoMiddleware],
     });
     this.addRoute({
-      path: '/avatar',
+      path: "/avatar",
       method: HttpMethod.Post,
       handler: this.uploadAvatar as any,
-      middlewares: [this.authenticateMiddleware, uploadAvatarMiddleware]
+      middlewares: [this.authenticateMiddleware, uploadAvatarMiddleware],
     });
     this.addRoute({
-      path: '/check',
+      path: "/login",
       method: HttpMethod.Get,
       handler: this.checkToken as any,
-      middlewares: [this.authenticateMiddleware]
+      middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: '/favorites/:offerId',
+      path: "/favorites/:offerId",
       method: HttpMethod.Post,
       handler: this.addToFavorites as any,
-      middlewares: [this.authenticateMiddleware]
+      middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: '/favorites/:offerId',
+      path: "/favorites/:offerId",
       method: HttpMethod.Delete,
       handler: this.removeFromFavorites as any,
-      middlewares: [this.authenticateMiddleware]
+      middlewares: [this.authenticateMiddleware],
     });
     this.addRoute({
-      path: '/favorites',
+      path: "/favorites",
       method: HttpMethod.Get,
       handler: this.getFavorites as any,
-      middlewares: [this.authenticateMiddleware]
+      middlewares: [this.authenticateMiddleware],
+    });
+    this.addRoute({
+      path: "/logout",
+      method: HttpMethod.Delete,
+      handler: this.logout as any,
+      middlewares: [this.authenticateMiddleware],
     });
   }
 
   public async create(
-    { body }: Request<Record<string, unknown>, Record<string, unknown>, CreateUserDto>,
+    {
+      body,
+    }: Request<Record<string, unknown>, Record<string, unknown>, CreateUserDto>,
     res: Response,
   ): Promise<void> {
     const existsUser = await this.userService.findByEmail(body.email);
@@ -87,19 +108,31 @@ export class UserController extends BaseController {
       throw new HttpError(
         StatusCodes.CONFLICT,
         `User with email «${body.email}» exists.`,
-        'UserController'
+        "UserController",
       );
     }
 
-    const result = await this.userService.create(body, this.configService.get('SALT'));
+    const result = await this.userService.create(
+      body,
+      this.configService.get("SALT"),
+    );
+
+    const token = await this.jwtService.sign({
+      email: result.email,
+      id: result.id,
+    });
+
     this.created(res, {
       email: result.email,
       name: result.name,
+      token,
     });
   }
 
   public async login(
-    { body }: Request<Record<string, unknown>, Record<string, unknown>, LoginUserDto>,
+    {
+      body,
+    }: Request<Record<string, unknown>, Record<string, unknown>, LoginUserDto>,
     res: Response,
   ): Promise<void> {
     const user = await this.userService.findByEmail(body.email);
@@ -108,15 +141,15 @@ export class UserController extends BaseController {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         `User with email ${body.email} not found.`,
-        'UserController',
+        "UserController",
       );
     }
 
-    if (!user.verifyPassword(body.password, this.configService.get('SALT'))) {
+    if (!user.verifyPassword(body.password, this.configService.get("SALT"))) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
         `Incorrect password for user ${body.email}.`,
-        'UserController',
+        "UserController",
       );
     }
 
@@ -139,21 +172,23 @@ export class UserController extends BaseController {
     if (!file) {
       throw new HttpError(
         StatusCodes.BAD_REQUEST,
-        'Avatar file is required',
-        'UserController'
+        "Avatar file is required",
+        "UserController",
       );
     }
 
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'User not authenticated',
-        'UserController'
+        "User not authenticated",
+        "UserController",
       );
     }
 
     const avatarUrl = `/upload/${file.filename}`;
-    const updatedUser = await this.userService.updateById(user.id, { avatarUrl });
+    const updatedUser = await this.userService.updateById(user.id, {
+      avatarUrl,
+    });
 
     this.ok(res, {
       avatarUrl: updatedUser?.avatarUrl,
@@ -167,8 +202,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'User not authenticated',
-        'UserController'
+        "User not authenticated",
+        "UserController",
       );
     }
 
@@ -177,8 +212,8 @@ export class UserController extends BaseController {
     if (!foundUser) {
       throw new HttpError(
         StatusCodes.NOT_FOUND,
-        'User not found',
-        'UserController'
+        "User not found",
+        "UserController",
       );
     }
 
@@ -186,7 +221,7 @@ export class UserController extends BaseController {
       email: foundUser.email,
       name: foundUser.name,
       avatarUrl: foundUser.avatarUrl,
-      type: foundUser.type,
+      isPro: foundUser.type === "pro",
     });
   }
 
@@ -197,8 +232,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'User not authenticated',
-        'UserController'
+        "User not authenticated",
+        "UserController",
       );
     }
 
@@ -214,8 +249,8 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'User not authenticated',
-        'UserController'
+        "User not authenticated",
+        "UserController",
       );
     }
 
@@ -231,12 +266,17 @@ export class UserController extends BaseController {
     if (!user) {
       throw new HttpError(
         StatusCodes.UNAUTHORIZED,
-        'User not authenticated',
-        'UserController'
+        "User not authenticated",
+        "UserController",
       );
     }
 
     const favorites = await this.userService.findFavorites(user.id);
-    this.ok(res, favorites);
+    const serializedFavorites = favorites.map(serializeOfferForFrontend);
+    this.ok(res, serializedFavorites);
+  }
+
+  public async logout(_req: Request, res: Response): Promise<void> {
+    this.noContent(res, null);
   }
 }
